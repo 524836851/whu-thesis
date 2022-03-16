@@ -2,24 +2,30 @@
 
 \chapter{GNSS实时滤波精密轨道确定中的效率优化}
 
-\section{常用的程序效率优化方法}
+\section{引言}
+
+\section{程序效率分析与优化方法}
 
 \section{基于OpenMP的多线程并行}
 
-\subsection{测站间并行预处理}
+\subsection{测站间并行实时数据预处理}
 
 \subsection{测站间并行组观测方程}
 
-\subsection{基线间并行固定模糊度}
-
-\subsubsection{基于最短路选取模糊度独立集}
-
-\subsubsection{并行构建双差模糊度}
-
 \subsection{卫星间并行轨道积分}
+
+\subsection{实验结果和分析}
 
 \section{基于高性能矩阵库的参数估计}
 
 \subsection{基于块操作优化QR分解基本原理}
 
 \subsection{不同矩阵库下的QR分解效率对比分析}
+
+\section{双差模糊度固定算法优化}
+
+\subsection{基于最小生成树算法的模糊度独立集选取}
+
+\subsection{并行构建双差模糊度}
+
+\subsection{实验结果和分析}
