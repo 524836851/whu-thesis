@@ -218,8 +218,10 @@ Application and Teaching）的基础上，开发实现了具有GNSS实时滤波�
 
 \subsection{基于SRIF的实时滤波轨道处理流程}
 
-前面推导了平方根信息滤波的量测更新和时间更新的基本原理,图~\ref{fig:SRIF_flowchart}给出了出基于平方根信息滤波的实时滤波轨道的基本处理流程。这里需要注意的是，考虑到卫星轨道积分相对过于耗时。
-
+（这里把轨道参数如何进行转移的问题进行相关阐述）
+前面推导了平方根信息滤波的量测更新和时间更新的基本原理,图~\ref{fig:SRIF_flowchart}给出了出基于平方根信息滤波的实时滤波轨道的基本处理流程。
+这里将实时滤波轨道中的时间更新分成了轨道参数与其他参数两个部分。其中，对于轨道参数的更新，我们通常需要通过数值积分获取前后历元的状态转移矩阵，从而构建相应的状态转移方程。但考虑到数值积分过程较为耗时，这里通常不需要在每个历元进行积分计算，而是使用之前的积分的计算结果进行一个近似地使用。对于轨道状态转移方程的权阵设定：
+对于非轨道参数的更新，在无电离层模型中，主要需要考虑钟差参数、对流层参数、系统间偏差参数和模糊度参数的状态更新。
 \begin{figure}
   \centering
   \includegraphics[width=0.6\textwidth]{SRIF_flowchart.png}
@@ -227,11 +229,15 @@ Application and Teaching）的基础上，开发实现了具有GNSS实时滤波�
   \label{fig:SRIF_flowchart}
 \end{figure}
 
-从图~\ref{fig:SRIF_flowchart}中可以看出，blabal
 
 \section{GNSS数据的实时质量控制}
 
-画图结果
+\begin{figure}
+  \centering
+  \includegraphics[width=0.6\textwidth]{preprocess.png}
+  \caption{GNSS实时数据预处理算法流程图}
+  \label{fig:tb_flowchart}
+\end{figure}
 
 \subsection{实时周跳探测算法}
 
