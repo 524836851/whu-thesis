@@ -106,7 +106,7 @@ Application and Teaching）的基础上，开发实现了具有GNSS实时滤波�
 
 \subsection{时间更新算法}
 
-导航卫星精密轨道确定问题中包含着大量的随时间变化的动态参数，如轨道参数、钟差参数、对流程参数和模糊度参数等。
+导航卫星精密轨道确定问题中包含着大量的随时间变化的动态参数，如轨道参数、钟差参数、对流层参数和模糊度参数等。
 如何在SRIF算法中随时间动态更新调整这些参数，也是实时滤波轨道处理中的一个关键步骤。
 尽管这些动态参数各自具有不同的特性，但考虑它们一般化的时间更新过程，都包含了参数增加、参数状态更新、参数消除这三个部分。
 接下来依次对这三个部分的具体算法流程进行相应的介绍
@@ -161,7 +161,7 @@ Application and Teaching）的基础上，开发实现了具有GNSS实时滤波�
 	\label{eq:trans_eq}
 \end{equation}
 式中，\(\phi_{j+1/j}\)为线性化后的状态转移矩阵，\(W_{\omega}\)为状态转移方程的信息权矩阵，其三角化分解后的结果为\(R_{\omega}\),\(\beta_{j+1}\)为状态转移方程中的过程噪声，其大小一般与状态转移的时间间隔相关。
-到这里可以发现，本质上完成参数的状态更新过程，即等价于将式\eqref{eq:trans_eq}当作观测方程，对式\eqref{eq:init_eq}的信息方程完成一次量测更新。因此对参数进行状态更新依然基于QR分解既可以完成。这里我们仿照式\eqref{eq:LSQ_single}构造如下的最小二乘模型，并对系数矩阵进行QR分解，可以得到如式\eqref{eq:SRIF_timeupdate}的形式：
+到这里可以发现，本质上完成参数的状态更新过程，即等价于将式\eqref{eq:trans_eq}当作观测方程，对式\eqref{eq:init_eq}的信息方程完成一次量测更新。因此对参数进行状态更新依然可以基于QR分解完成。这里我们仿照式\eqref{eq:LSQ_single}构造如下的最小二乘模型，并对系数矩阵进行QR分解，可以得到如式\eqref{eq:SRIF_timeupdate}的形式：
 \begin{equation}
   \begin{aligned}
 	 min(\Vert Hx-l \Vert_{2}) & = min(\Vert
@@ -189,7 +189,8 @@ Application and Teaching）的基础上，开发实现了具有GNSS实时滤波�
 	\begin{bmatrix}
 	\varepsilon_{r,j+1} & \varepsilon_{rc,j+1} & \varepsilon_{rn,j+1} \\
 	0 & \varepsilon_{c,j+1} & \varepsilon_{cn,j+1} \\
-	0 & 0 & \varepsilon_{n,j+1}
+	0 & 0 & \varepsilon_{n,j+1}\\
+	0 & 0 & 0
 	\end{bmatrix}
 	\begin{bmatrix}
 		x_{r,j}\\
@@ -208,16 +209,20 @@ Application and Teaching）的基础上，开发实现了具有GNSS实时滤波�
   \end{aligned}	
   \label{eq:SRIF_timeupdate}
 \end{equation}
-这里我们继续对
+式中，\(\varepsilon_{j+1}\)表示了j+1时刻下的信息方程的信息矩阵,\(Q\)为对系数矩阵进行QR分解得到的正交矩阵。这样便推导得到了参数状态过更新后的信息方程。
+最后，可以发现由于信息矩阵为上三角矩阵，对于后续不再需要的\(x_{r,j}\)参数，可以很自然地将其对应的信息方程中的所在行删除，方程剩余的部分依然满足信息方程的结构。
+同时，由于SRIF算法中的时间更新和量测更新是随时间不断地迭代进行，因此删除过时参数可以大大避免因为这些参数导致的无意义的计算资源的消耗。
 
+至此，已经推导得到了基于QR分解实现时间更新基本原理。对于参数增加和消除，由于信息方程的上三角化的特殊结构，可以通过简单的矩阵变换得到。
+对于参数状态更新的部分，其核心关键就在于构建式\eqref{eq:trans_eq}的状态转移方程以及式\eqref{eq:SRIF_timeupdate}的信息方程的时间更新。
 
 \subsection{基于SRIF的实时滤波轨道处理流程}
 
-前面推导了平方根信息滤波的量测更新和时间更新的基本原理，这里给出基于平方根信息滤波的实时滤波轨道的基本处理流程。
+前面推导了平方根信息滤波的量测更新和时间更新的基本原理,图~\ref{fig:SRIF_flowchart}给出了出基于平方根信息滤波的实时滤波轨道的基本处理流程。这里需要注意的是，考虑到卫星轨道积分相对过于耗时。
 
 \begin{figure}
   \centering
-  \includegraphics[width=1\textwidth]{timerefer.png}
+  \includegraphics[width=0.6\textwidth]{SRIF_flowchart.png}
   \caption{基于SRIF的实时滤波轨道处理流程图}
   \label{fig:SRIF_flowchart}
 \end{figure}
@@ -232,9 +237,11 @@ Application and Teaching）的基础上，开发实现了具有GNSS实时滤波�
 
 \subsection{实时质量控制算法}
 
+
 \subsection{实验结果和分析}
 
 实验设计:
+
 主要目的：选用经过多次迭代后的log\underline{\space}tb文件作为参考值，认为其中没有发生周跳。以此对比实时质量算法所起的作用。
 
 分别使用该log\underline{\space}tb文件，以及实时周跳探测和质量控制的算法分别进行实时滤波轨道确定计算
