@@ -218,31 +218,70 @@ Application and Teaching）的基础上，开发实现了具有GNSS实时滤波�
 
 \subsection{基于SRIF的实时滤波轨道处理流程}
 
-（这里把轨道参数如何进行转移的问题进行相关阐述）
 前面推导了平方根信息滤波的量测更新和时间更新的基本原理,图~\ref{fig:SRIF_flowchart}给出了出基于平方根信息滤波的实时滤波轨道的基本处理流程。
-这里将实时滤波轨道中的时间更新分成了轨道参数与其他参数两个部分。其中，对于轨道参数的更新，我们通常需要通过数值积分获取前后历元的状态转移矩阵，从而构建相应的状态转移方程。但考虑到数值积分过程较为耗时，这里通常不需要在每个历元进行积分计算，而是使用之前数值积分的计算结果作一个近似处理。
-而对于轨道状态转移方程的权阵的设定,这里采用了随机游走(Random Walk,RW)模型来描述导航卫星的位置速度参数，采用零均值白噪声模型来描述导航卫星的动力学模型参数。
-（给出随机游走模型的公式推导）
-本文随机游走模型均采用经验值\(10E-12\)，零均值白噪声模型采用经验值\(10E-14\)
+首先,这里将实时滤波轨道中的时间更新分成了轨道参数与其他参数两个部分。
+其中，对于轨道参数的更新，我们通常需要通过数值积分获取前后历元的状态转移矩阵，从而构建相应的状态转移方程。但考虑到数值积分过程较为耗时，这里通常不需要在每个历元进行积分计算，而是使用之前数值积分的计算结果作一个近似处理。
+对于状态转移方程的构建,本文采用随机游走的函数模型(Random Walk,RW)来进行描述。假定导航卫星的速度参数和动力学模型参数的误差为零均值白噪声(White Noise)模型（这里我们忽略了动力学模型参数误差对速度误差造成的影响），因此对于前后时间间隔为\(\Delta t\)的轨道参数状态转移方程，其协方差矩阵（其值和信息权矩阵为互逆关系）为下式\eqref{eq:trans_eq_W}所示。
+\begin{equation}
+	\begin{aligned}
+		W(orb)^{-1}=
+		\begin{bmatrix}
+			\frac{\Delta t^{3}}{3}\sigma^{2}E_{3\times3} & 
+			\frac{\Delta t^{2}}{2}\sigma^{2}E_{3\times3} &
+			0E_{3\times n_{q}} \\
+			\frac{\Delta t^{2}}{2}\sigma^{2}E_{3\times3} & 
+			\Delta t\sigma^{2}E_{3\times3} &
+			0E_{3\times n_{q}} \\
+			0E_{3\times n_{q}} &
+			0E_{3\times n_{q}} &
+			\sigma_{q}^{2}E_{n_{q}\times n_{q}} \\
+		\end{bmatrix}
+	\end{aligned}	
+	\label{eq:trans_eq_W}
+\end{equation}
+式中，\(\sigma\)和\(\sigma_{q}\)分别表示了表示导航卫星速度误差和导航卫星动力学模型噪声的白噪声方差，具体实现则采用了经验值
+\(10^{-12}\)和\(10^{-14}\)（参考文献xxxx）。
+由于在平方根滤波中，需要对方程进行单位权标准化，因此我们通常使用其三角化后的结果,即如下式\eqref{eq:trans_eq_RW}所示：
+\begin{equation}
+	\begin{aligned}
+		&R(orb)^{T}R(orb)=W(orb) \\
+		& R(orb) =
+		\begin{bmatrix}
+			2\sqrt{3}\Delta t^{-\frac{3}{2}}\sigma^{2}E_{3\times3} & 
+			\Delta t^{\frac{1}{2}}\sigma^{2}E_{3\times3} &
+			0E_{3\times n_{q}} \\
+			\frac{\Delta t^{2}}{2}\sigma^{2}E_{3\times3} & 
+			\Delta t\sigma^{2}E_{3\times3} &
+			0E_{3\times n_{q}} \\
+			0E_{3\times n_{q}} &
+			0E_{3\times n_{q}} &
+			\sigma_{q}^{2}E_{n_{q}\times n_{q}} \\
+		\end{bmatrix}
+	\end{aligned}	
+	\label{eq:trans_eq_RW}
+\end{equation}
+
+
+而对于非轨道参数的更新，在无电离层模型中，主要需要考虑钟差参数、对流层参数、系统间偏差参数和模糊度参数的状态更新。对于钟差参数和模糊度参数，通常采用白噪声(white noise)模型进行估计，因此在时间更新过程中只需要考虑参数增加和参数消除的步骤；
+而对于系统间偏差参数和对流层参数则采用分段常数的模型进行估计
+
+其次，完成时间更新后，根据当前历元的观测数据构建相应的观测方程，即可进行量测更新。通常，我们通常不直接估计待估参数的绝对量，而是估计相对于初值的改正量。此时，尽管得到了当前对于，对于那些下个历元不会被重新估计的参数而言，此时无需讲
 另外，这里给出对于设定小噪声使用的方法。对于极小噪声数值的设定，由于计算机数值误差的原因，依然会引起SRIF滤波器的发散现象。这里可以采用如下的转换方法进行：
 （这里给出噪声为0情况下滤波器的时间更新过程）
-\
 
-而对于非轨道参数的更新，在无电离层模型中，主要需要考虑钟差参数、对流层参数、系统间偏差参数和模糊度参数的状态更新。
 
 \begin{figure}
   \centering
-  \includegraphics[width=0.6\textwidth]{SRIF_flowchart.png}
+  \includegraphics{SRIF_flowchart.pdf}
   \caption{基于SRIF的实时滤波轨道处理流程图}
   \label{fig:SRIF_flowchart}
 \end{figure}
-
 
 \section{GNSS数据的实时质量控制}
 
 \begin{figure}
   \centering
-  \includegraphics[width=0.6\textwidth]{preprocess.png}
+  \includegraphics{preprocess.pdf}
   \caption{GNSS实时数据预处理算法流程图}
   \label{fig:tb_flowchart}
 \end{figure}
